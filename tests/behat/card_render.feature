@@ -125,3 +125,20 @@ Feature: Card design renders lesson question pages
       | N1   | 3      | Wrong    | This page | 0     |
     When I am on the "Num lesson" "lesson activity" page logged in as student1
     Then ".lesson-design-card__textinput" "css_element" should exist
+
+  Scenario: Content page renders as a card with navigation buttons
+    Given the following "activity" exists:
+      | activity | lesson        |
+      | course   | C1            |
+      | idnumber | 0007          |
+      | name     | Branch lesson |
+      | design   | monsterwelt   |
+    And the following "mod_lesson > pages" exist:
+      | lesson        | qtype   | title      | content       |
+      | Branch lesson | content | Start page | Choose a path |
+    And the following "mod_lesson > answers" exist:
+      | page       | answer  | jumpto    | score |
+      | Start page | Go next | Next page | 0     |
+    When I am on the "Branch lesson" "lesson activity" page logged in as student1
+    Then ".lesson-design-card__buttons" "css_element" should exist
+    And I should see "Go next"

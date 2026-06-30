@@ -72,9 +72,10 @@ final class question_page_test extends \advanced_testcase {
      * Build the export data for a question of the given type under the card design.
      *
      * @param string $generatormethod The mod_lesson generator method (e.g. create_question_truefalse).
+     * @param array $record Optional page record passed to the generator.
      * @return array The exported template data.
      */
-    protected function export_for_type(string $generatormethod): array {
+    protected function export_for_type(string $generatormethod, array $record = []): array {
         global $CFG, $DB, $PAGE;
         require_once($CFG->dirroot . '/mod/lesson/locallib.php');
 
@@ -90,7 +91,7 @@ final class question_page_test extends \advanced_testcase {
 
         /** @var \mod_lesson_generator $lgen */
         $lgen = $gen->get_plugin_generator('mod_lesson');
-        $pagerec = $lgen->$generatormethod($lessonrec, []);
+        $pagerec = $lgen->$generatormethod($lessonrec, $record);
 
         $PAGE->set_cm($cm, $course);
         $lesson = new \lesson($lessonrec, $cm, $course);
@@ -136,5 +137,40 @@ final class question_page_test extends \advanced_testcase {
         $this->assertSame('answer', $data['inputname']);
         $this->assertSame('number', $data['inputtype']);
         $this->assertSame('_qf__lesson_display_answer_form_numerical', $data['qfmarkername']);
+    }
+
+    /**
+     * Matching questions render as paired selects.
+     */
+    public function test_matching_renders_as_selects(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_matching');
+        $this->assertTrue($data['ismatching']);
+        $this->assertSame('_qf__lesson_display_answer_form_matching', $data['qfmarkername']);
+        $this->assertNotEmpty($data['matchrows']);
+        $this->assertStringStartsWith('response[', $data['matchrows'][0]['selectname']);
+        $this->assertNotEmpty($data['matchrows'][0]['options']);
+    }
+
+    /**
+     * Content (branch table) pages render as navigation buttons.
+     */
+    public function test_content_renders_as_buttons(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+        $this->resetAfterTest();
+        $record = [
+            'answer_editor' => [
+                0 => ['text' => 'Go next', 'format' => FORMAT_MOODLE],
+                1 => ['text' => 'Go back', 'format' => FORMAT_MOODLE],
+            ],
+            'jumpto' => [0 => LESSON_NEXTPAGE, 1 => LESSON_PREVIOUSPAGE],
+        ];
+        $data = $this->export_for_type('create_content', $record);
+        $this->assertTrue($data['iscontent']);
+        $this->assertFalse($data['ischoice']);
+        $this->assertCount(2, $data['buttons']);
+        $this->assertArrayHasKey('jumpto', $data['buttons'][0]);
+        $this->assertArrayHasKey('label', $data['buttons'][0]);
     }
 }

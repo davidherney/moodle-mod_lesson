@@ -75,6 +75,20 @@
             <input type="{{inputtype}}" name="{{inputname}}" value="{{inputvalue}}" {{#inputreadonly}}readonly{{/inputreadonly}} class="form-control" aria-label="{{choosearialabel}}">
         </div>
         {{/istext}}
+        {{#ismatching}}
+        <div class="lesson-design-card__matching">
+            {{#matchrows}}
+            <div class="lesson-design-card__matchrow">
+                <span class="lesson-design-card__matchstem">{{{stemlabel}}}</span>
+                <select name="{{selectname}}" class="custom-select">
+                    {{#options}}
+                    <option value="{{value}}" {{#selected}}selected{{/selected}}>{{{label}}}</option>
+                    {{/options}}
+                </select>
+            </div>
+            {{/matchrows}}
+        </div>
+        {{/ismatching}}
         <div class="lesson-design-card__nav">
             {{#nav.showback}}
             <a href="{{nav.backurl}}" class="btn btn-secondary lesson-design-card__back">&#8592; {{nav.backlabel}}</a>

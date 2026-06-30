@@ -98,6 +98,8 @@ class question_page implements \renderable, \templatable {
             // Mode flags (mutually exclusive); default all false.
             'ischoice' => false,
             'istext' => false,
+            'ismatching' => false,
+            'iscontent' => false,
             'multiple' => false,
         ];
 
@@ -130,6 +132,18 @@ class question_page implements \renderable, \templatable {
                 $formname = 'lesson_display_answer_form_numerical';
                 $data['istext'] = true;
                 $data += $this->build_textinput('number', $hasattempt);
+                break;
+            case 'matching':
+                $formname = 'lesson_display_answer_form_matching';
+                $data['ismatching'] = true;
+                $data['matchrows'] = $this->build_matching();
+                break;
+            case 'branchtable':
+                // Content page: navigation buttons, no answer form marker.
+                $formname = '';
+                $data['iscontent'] = true;
+                $data['title'] = format_string($pageprops->title);
+                $data['buttons'] = $this->build_content_buttons();
                 break;
             default:
                 // Should not happen: the renderer only routes supported types here.
@@ -190,5 +204,69 @@ class question_page implements \renderable, \templatable {
             'inputvalue' => $value,
             'inputreadonly' => $hasattempt,
         ];
+    }
+
+    /**
+     * Build the navigation buttons for a content (branch table) page.
+     *
+     * Each branch answer becomes a button posting its jump target to continue.php.
+     *
+     * @return array[] List of buttons with jumpto and label.
+     */
+    protected function build_content_buttons(): array {
+        $textoptions = ['para' => false, 'noclean' => true];
+        $buttons = [];
+        foreach ($this->page->get_answers() as $answer) {
+            if ($answer->answer === '') {
+                // Not a branch.
+                continue;
+            }
+            $buttons[] = [
+                'jumpto' => $answer->jumpto,
+                'label' => strip_tags(format_text($answer->answer, FORMAT_MOODLE, $textoptions)),
+            ];
+        }
+        return $buttons;
+    }
+
+    /**
+     * Build the matching rows (stem label + a select of shuffled responses).
+     *
+     * Mirrors lesson_page_type_matching::make_answer_form(): the first two answers
+     * hold the correct/wrong response feedback, the rest are matchable stems.
+     *
+     * @return array[] List of rows with stemlabel, selectname and options.
+     */
+    protected function build_matching(): array {
+        $answers = array_slice($this->page->get_answers(), 2);
+        $textoptions = ['para' => false, 'noclean' => true];
+
+        // Collect the available responses (right-hand side), keyed by trimmed text.
+        $responses = [];
+        foreach ($answers as $answer) {
+            if ($answer->response !== null) {
+                $responses[trim($answer->response)] = format_text(trim($answer->response));
+            }
+        }
+        $keys = array_keys($responses);
+        shuffle($keys);
+
+        $rows = [];
+        foreach ($answers as $answer) {
+            if ($answer->response === null) {
+                continue;
+            }
+            $answer = \lesson_page::rewrite_answers_urls($answer);
+            $options = [['value' => '', 'label' => get_string('choosedots'), 'selected' => true]];
+            foreach ($keys as $key) {
+                $options[] = ['value' => $key, 'label' => $responses[$key], 'selected' => false];
+            }
+            $rows[] = [
+                'stemlabel' => format_text($answer->answer, $answer->answerformat, $textoptions),
+                'selectname' => 'response[' . $answer->id . ']',
+                'options' => $options,
+            ];
+        }
+        return $rows;
     }
 }
