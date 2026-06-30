@@ -64,44 +64,18 @@ class question_page implements \renderable, \templatable {
 
         $tpl = template_manager::get_for_lesson($this->lesson->properties());
         $config = template_manager::resolved_config($tpl);
-
+        $lessonprops = $this->lesson->properties();
         $pageprops = $this->page->properties();
-        $multiple = !empty($pageprops->qoption);
-        $formname = $multiple
-            ? 'lesson_display_answer_form_multichoice_multianswer'
-            : 'lesson_display_answer_form_multichoice_singleanswer';
-
-        $answers = $this->page->get_used_answers();
-        shuffle($answers);
-        $textoptions = ['para' => false, 'noclean' => true];
 
         $hasattempt = isset($USER->modattempts[$this->lesson->id])
             && !empty($USER->modattempts[$this->lesson->id]);
-        $useransrid = $hasattempt ? ($USER->modattempts[$this->lesson->id]->answerid ?? 0) : 0;
 
-        $answerdata = [];
-        foreach ($answers as $answer) {
-            $answerdata[] = [
-                'label' => format_text($answer->answer, $answer->answerformat, $textoptions),
-                'value' => $multiple ? 1 : $answer->id,
-                'name' => $multiple ? 'answer[' . $answer->id . ']' : 'answerid',
-                'type' => $multiple ? 'checkbox' : 'radio',
-                'checked' => (!$multiple && $answer->id == $useransrid),
-                'disabled' => $hasattempt,
-            ];
-        }
-
-        $lessonprops = $this->lesson->properties();
-
-        return [
+        $data = [
             'formaction' => $CFG->wwwroot . '/mod/lesson/continue.php',
             'sesskey' => sesskey(),
-            'qfmarkername' => '_qf__' . $formname,
             'cmid' => $this->cmid,
             'pageid' => $pageprops->id,
             'contents' => $this->page->get_contents(),
-            'multiple' => $multiple,
-            'answers' => $answerdata,
             'answercolumns' => (int) ($config['answercolumns'] ?? 2),
             'showprogress' => !empty($config['showprogress']),
             'nav' => [
@@ -111,6 +85,100 @@ class question_page implements \renderable, \templatable {
             ],
             'palette' => $config['palette'] ?? [],
             'submitlabel' => get_string('submit', 'lesson'),
+            // Mode flags (mutually exclusive); default all false.
+            'ischoice' => false,
+            'istext' => false,
+            'multiple' => false,
+        ];
+
+        $idstring = $this->page->get_idstring();
+        switch ($idstring) {
+            case 'multichoice':
+                $multiple = !empty($pageprops->qoption);
+                $formname = $multiple
+                    ? 'lesson_display_answer_form_multichoice_multianswer'
+                    : 'lesson_display_answer_form_multichoice_singleanswer';
+                $data['ischoice'] = true;
+                $data['multiple'] = $multiple;
+                $data['answers'] = $this->build_choices($this->page->get_used_answers(), $multiple, $hasattempt);
+                break;
+            case 'truefalse':
+                $formname = 'lesson_display_answer_form_truefalse';
+                $data['ischoice'] = true;
+                $answers = $this->page->get_answers();
+                foreach ($answers as $key => $answer) {
+                    $answers[$key] = \lesson_page::rewrite_answers_urls($answer);
+                }
+                $data['answers'] = $this->build_choices($answers, false, $hasattempt);
+                break;
+            case 'shortanswer':
+                $formname = 'lesson_display_answer_form_shortanswer';
+                $data['istext'] = true;
+                $data += $this->build_textinput('text', $hasattempt);
+                break;
+            case 'numerical':
+                $formname = 'lesson_display_answer_form_numerical';
+                $data['istext'] = true;
+                $data += $this->build_textinput('number', $hasattempt);
+                break;
+            default:
+                // Should not happen: the renderer only routes supported types here.
+                $formname = 'lesson_display_answer_form_' . $idstring;
+                break;
+        }
+
+        $data['qfmarkername'] = '_qf__' . $formname;
+        return $data;
+    }
+
+    /**
+     * Build the answer choices for radio/checkbox based question types.
+     *
+     * @param array $answers The answers to render.
+     * @param bool $multiple Whether multiple answers are allowed (checkboxes).
+     * @param bool $hasattempt Whether the user already has an attempt (review mode).
+     * @return array[] List of answer rows for the template.
+     */
+    protected function build_choices(array $answers, bool $multiple, bool $hasattempt): array {
+        global $USER;
+
+        shuffle($answers);
+        $textoptions = ['para' => false, 'noclean' => true];
+        $useransrid = $hasattempt ? ($USER->modattempts[$this->lesson->id]->answerid ?? 0) : 0;
+
+        $rows = [];
+        foreach ($answers as $answer) {
+            $rows[] = [
+                'label' => format_text($answer->answer, $answer->answerformat, $textoptions),
+                'value' => $multiple ? 1 : $answer->id,
+                'name' => $multiple ? 'answer[' . $answer->id . ']' : 'answerid',
+                'type' => $multiple ? 'checkbox' : 'radio',
+                'checked' => (!$multiple && $answer->id == $useransrid),
+                'disabled' => $hasattempt,
+            ];
+        }
+        return $rows;
+    }
+
+    /**
+     * Build the single text/number input for shortanswer and numerical types.
+     *
+     * @param string $inputtype The HTML input type ('text' or 'number').
+     * @param bool $hasattempt Whether the user already has an attempt (review mode).
+     * @return array Template fields for the text input.
+     */
+    protected function build_textinput(string $inputtype, bool $hasattempt): array {
+        global $USER;
+
+        $value = '';
+        if ($hasattempt && isset($USER->modattempts[$this->lesson->id]->useranswer)) {
+            $value = (string) $USER->modattempts[$this->lesson->id]->useranswer;
+        }
+        return [
+            'inputname' => 'answer',
+            'inputtype' => $inputtype,
+            'inputvalue' => $value,
+            'inputreadonly' => $hasattempt,
         ];
     }
 }

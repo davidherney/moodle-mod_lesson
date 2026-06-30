@@ -67,4 +67,74 @@ final class question_page_test extends \advanced_testcase {
         $this->assertSame('answerid', $data['answers'][0]['name']);
         $this->assertSame('radio', $data['answers'][0]['type']);
     }
+
+    /**
+     * Build the export data for a question of the given type under the card design.
+     *
+     * @param string $generatormethod The mod_lesson generator method (e.g. create_question_truefalse).
+     * @return array The exported template data.
+     */
+    protected function export_for_type(string $generatormethod): array {
+        global $CFG, $DB, $PAGE;
+        require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+
+        \lesson_install_builtin_templates();
+        $this->setAdminUser();
+
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $lessonrec = $gen->create_module('lesson', ['course' => $course->id, 'design' => 'monsterwelt']);
+        $cm = get_coursemodule_from_instance('lesson', $lessonrec->id);
+        $lessonrec = $DB->get_record('lesson', ['id' => $lessonrec->id], '*', MUST_EXIST);
+        $lessonrec->cmid = $cm->id;
+
+        /** @var \mod_lesson_generator $lgen */
+        $lgen = $gen->get_plugin_generator('mod_lesson');
+        $pagerec = $lgen->$generatormethod($lessonrec, []);
+
+        $PAGE->set_cm($cm, $course);
+        $lesson = new \lesson($lessonrec, $cm, $course);
+        $page = $lesson->load_page($pagerec->id);
+
+        $renderable = new question_page($lesson, $page, null, $cm->id);
+        return $renderable->export_for_template($PAGE->get_renderer('mod_lesson'));
+    }
+
+    /**
+     * True/false questions render as radio choices.
+     */
+    public function test_truefalse_renders_as_choices(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_truefalse');
+        $this->assertTrue($data['ischoice']);
+        $this->assertFalse($data['istext']);
+        $this->assertSame('_qf__lesson_display_answer_form_truefalse', $data['qfmarkername']);
+        $this->assertSame('answerid', $data['answers'][0]['name']);
+        $this->assertSame('radio', $data['answers'][0]['type']);
+    }
+
+    /**
+     * Short answer questions render as a single text input.
+     */
+    public function test_shortanswer_renders_as_textinput(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_shortanswer');
+        $this->assertTrue($data['istext']);
+        $this->assertFalse($data['ischoice']);
+        $this->assertSame('answer', $data['inputname']);
+        $this->assertSame('text', $data['inputtype']);
+        $this->assertSame('_qf__lesson_display_answer_form_shortanswer', $data['qfmarkername']);
+    }
+
+    /**
+     * Numerical questions render as a single number input.
+     */
+    public function test_numerical_renders_as_textinput(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_numeric');
+        $this->assertTrue($data['istext']);
+        $this->assertSame('answer', $data['inputname']);
+        $this->assertSame('number', $data['inputtype']);
+        $this->assertSame('_qf__lesson_display_answer_form_numerical', $data['qfmarkername']);
+    }
 }

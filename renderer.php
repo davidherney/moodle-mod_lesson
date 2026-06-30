@@ -196,10 +196,13 @@ class mod_lesson_renderer extends plugin_renderer_base {
     public function display_page(lesson $lesson, lesson_page $page, $attempt) {
         // +++ MBS-HACK(mebis): design templates feature.
         $tpl = \mod_lesson\local\template_manager::get_for_lesson($lesson->properties());
-        // Phase 1: only multichoice uses the new pipeline; 'default' keeps legacy markup.
-        if ($tpl->get('baseskin') !== 'default' && ($page instanceof \lesson_page_type_multichoice)) {
+        // Phase 2: choice and single-text question types use the new pipeline; 'default' keeps legacy markup.
+        $cardtypes = ['multichoice', 'truefalse', 'shortanswer', 'numerical'];
+        if ($tpl->get('baseskin') !== 'default'
+                && ($page instanceof \lesson_page)
+                && in_array($page->get_idstring(), $cardtypes, true)) {
             $renderable = new \mod_lesson\output\question_page($lesson, $page, $attempt, $this->page->cm->id);
-            // Trigger the question viewed event (normally done inside multichoice::display()).
+            // Trigger the question viewed event (normally done inside the pagetype display()).
             $event = \mod_lesson\event\question_viewed::create([
                 'context' => \context_module::instance($this->page->cm->id),
                 'objectid' => $page->properties()->id,

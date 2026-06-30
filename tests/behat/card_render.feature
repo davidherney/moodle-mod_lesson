@@ -51,3 +51,59 @@ Feature: Card design renders lesson question pages
     When I am on the "Plain lesson" "lesson activity" page logged in as student1
     Then ".lesson-design-card" "css_element" should not exist
     And I should see "Right"
+
+  Scenario: True/false question renders as a card
+    Given the following "activity" exists:
+      | activity | lesson      |
+      | course   | C1          |
+      | idnumber | 0003        |
+      | name     | TF lesson   |
+      | design   | monsterwelt |
+    And the following "mod_lesson > pages" exist:
+      | lesson    | qtype     | title | content           |
+      | TF lesson | truefalse | TF1   | The earth is round |
+    And the following "mod_lesson > answers" exist:
+      | page | answer | response | jumpto    | score |
+      | TF1  | True   | Yes      | Next page | 1     |
+      | TF1  | False  | No       | This page | 0     |
+    When I am on the "TF lesson" "lesson activity" page logged in as student1
+    Then ".lesson-design-card" "css_element" should exist
+    And I should see "True"
+    And I should see "False"
+
+  Scenario: Short answer question renders as a card with a text input and accepts an answer
+    Given the following "activity" exists:
+      | activity | lesson      |
+      | course   | C1          |
+      | idnumber | 0004        |
+      | name     | SA lesson   |
+      | design   | monsterwelt |
+    And the following "mod_lesson > pages" exist:
+      | lesson    | qtype       | title | content              |
+      | SA lesson | shortanswer | SA1   | Capital of France?   |
+    And the following "mod_lesson > answers" exist:
+      | page | answer | response | jumpto    | score |
+      | SA1  | Paris  | Correct  | Next page | 1     |
+      | SA1  | Lyon   | Wrong    | This page | 0     |
+    When I am on the "SA lesson" "lesson activity" page logged in as student1
+    Then ".lesson-design-card__textinput" "css_element" should exist
+    And I set the field "answer" to "Paris"
+    And I press "Submit"
+    Then I should see "Correct"
+
+  Scenario: Numerical question renders as a card with a number input
+    Given the following "activity" exists:
+      | activity | lesson       |
+      | course   | C1           |
+      | idnumber | 0005         |
+      | name     | Num lesson   |
+      | design   | monsterwelt  |
+    And the following "mod_lesson > pages" exist:
+      | lesson     | qtype     | title | content   |
+      | Num lesson | numeric   | N1    | 1 plus 1? |
+    And the following "mod_lesson > answers" exist:
+      | page | answer | response | jumpto    | score |
+      | N1   | 2      | Correct  | Next page | 1     |
+      | N1   | 3      | Wrong    | This page | 0     |
+    When I am on the "Num lesson" "lesson activity" page logged in as student1
+    Then ".lesson-design-card__textinput" "css_element" should exist

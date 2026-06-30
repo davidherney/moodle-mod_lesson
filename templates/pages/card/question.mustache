@@ -56,6 +56,7 @@
         <input type="hidden" name="id" value="{{cmid}}">
         <input type="hidden" name="pageid" value="{{pageid}}">
         <div class="lesson-design-card__prompt">{{{contents}}}</div>
+        {{#ischoice}}
         <div class="lesson-design-card__answers lesson-design-card__answers--cols{{answercolumns}}">
             {{#answers}}
                 <label class="lesson-design-card__answer">
@@ -64,6 +65,12 @@
                 </label>
             {{/answers}}
         </div>
+        {{/ischoice}}
+        {{#istext}}
+        <div class="lesson-design-card__textinput">
+            <input type="{{inputtype}}" name="{{inputname}}" value="{{inputvalue}}" {{#inputreadonly}}readonly{{/inputreadonly}} class="form-control">
+        </div>
+        {{/istext}}
         <div class="lesson-design-card__nav">
             <button type="submit" name="submitbutton" class="btn btn-primary lesson-design-card__next">{{submitlabel}}</button>
         </div>
