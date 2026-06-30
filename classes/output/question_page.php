@@ -70,6 +70,10 @@ class question_page implements \renderable, \templatable {
         $hasattempt = isset($USER->modattempts[$this->lesson->id])
             && !empty($USER->modattempts[$this->lesson->id]);
 
+        $backurl = (new \moodle_url('/mod/lesson/view.php', ['id' => $this->cmid]))->out(false);
+        $retryparams = ['id' => $this->cmid, 'pageid' => $pageprops->id];
+        $retryurl = (new \moodle_url('/mod/lesson/view.php', $retryparams))->out(false);
+
         $data = [
             'formaction' => $CFG->wwwroot . '/mod/lesson/continue.php',
             'sesskey' => sesskey(),
@@ -78,13 +82,19 @@ class question_page implements \renderable, \templatable {
             'contents' => $this->page->get_contents(),
             'answercolumns' => (int) ($config['answercolumns'] ?? 2),
             'showprogress' => !empty($config['showprogress']),
+            'progresshtml' => '',
             'nav' => [
                 'showback' => !empty($config['nav']['showback']),
                 'showretry' => !empty($config['nav']['showretry']) && !empty($lessonprops->retake),
                 'shownext' => !empty($config['nav']['shownext']),
+                'backurl' => $backurl,
+                'retryurl' => $retryurl,
+                'backlabel' => get_string('design_back', 'lesson'),
+                'retrylabel' => get_string('design_retry', 'lesson'),
             ],
             'palette' => $config['palette'] ?? [],
             'submitlabel' => get_string('submit', 'lesson'),
+            'choosearialabel' => get_string('design_chooseanswer', 'lesson'),
             // Mode flags (mutually exclusive); default all false.
             'ischoice' => false,
             'istext' => false,

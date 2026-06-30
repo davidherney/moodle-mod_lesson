@@ -50,6 +50,9 @@
     }
 }}
 <div class="lesson-design-card" style="--ld-primary: {{palette.primary}}; --ld-surface: {{palette.surface}}; --ld-text: {{palette.text}}; --ld-accent: {{palette.accent}};">
+    {{#showprogress}}
+    <div class="lesson-design-card__progress">{{{progresshtml}}}</div>
+    {{/showprogress}}
     <form method="post" action="{{formaction}}" class="lesson-design-card__form">
         <input type="hidden" name="sesskey" value="{{sesskey}}">
         <input type="hidden" name="{{qfmarkername}}" value="1">
@@ -57,22 +60,30 @@
         <input type="hidden" name="pageid" value="{{pageid}}">
         <div class="lesson-design-card__prompt">{{{contents}}}</div>
         {{#ischoice}}
-        <div class="lesson-design-card__answers lesson-design-card__answers--cols{{answercolumns}}">
+        <fieldset class="lesson-design-card__answers lesson-design-card__answers--cols{{answercolumns}}">
+            <legend class="sr-only">{{choosearialabel}}</legend>
             {{#answers}}
                 <label class="lesson-design-card__answer">
                     <input type="{{type}}" name="{{name}}" value="{{value}}" {{#checked}}checked{{/checked}} {{#disabled}}disabled{{/disabled}}>
                     <span class="lesson-design-card__answer-label">{{{label}}}</span>
                 </label>
             {{/answers}}
-        </div>
+        </fieldset>
         {{/ischoice}}
         {{#istext}}
         <div class="lesson-design-card__textinput">
-            <input type="{{inputtype}}" name="{{inputname}}" value="{{inputvalue}}" {{#inputreadonly}}readonly{{/inputreadonly}} class="form-control">
+            <input type="{{inputtype}}" name="{{inputname}}" value="{{inputvalue}}" {{#inputreadonly}}readonly{{/inputreadonly}} class="form-control" aria-label="{{choosearialabel}}">
         </div>
         {{/istext}}
         <div class="lesson-design-card__nav">
+            {{#nav.showback}}
+            <a href="{{nav.backurl}}" class="btn btn-secondary lesson-design-card__back">&#8592; {{nav.backlabel}}</a>
+            {{/nav.showback}}
+            {{#nav.showretry}}
+            <a href="{{nav.retryurl}}" class="btn btn-secondary lesson-design-card__retry">&#8635; {{nav.retrylabel}}</a>
+            {{/nav.showretry}}
             <button type="submit" name="submitbutton" class="btn btn-primary lesson-design-card__next">{{submitlabel}}</button>
         </div>
     </form>
 </div>
+

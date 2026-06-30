@@ -114,4 +114,33 @@ final class template_manager_test extends \advanced_testcase {
         $this->assertSame(2, $config['answercolumns']);
         $this->assertArrayHasKey('primary', $config['palette']);
     }
+
+    /**
+     * Duplicating a template creates a copy with a unique idnumber.
+     */
+    public function test_duplicate_creates_unique_copy(): void {
+        $this->resetAfterTest();
+        \lesson_install_builtin_templates();
+        $src = template::get_record(['idnumber' => 'monsterwelt']);
+        $copy = template_manager::duplicate($src);
+        $this->assertSame('monsterwelt_copy', $copy->get('idnumber'));
+        $this->assertSame('card', $copy->get('baseskin'));
+        $this->assertStringContainsString('copy', $copy->get('name'));
+        // A second duplicate gets a different idnumber.
+        $copy2 = template_manager::duplicate($src);
+        $this->assertSame('monsterwelt_copy2', $copy2->get('idnumber'));
+    }
+
+    /**
+     * Moving a template reorders the sort order.
+     */
+    public function test_move_reorders(): void {
+        $this->resetAfterTest();
+        \lesson_install_builtin_templates();
+        $monster = template::get_record(['idnumber' => 'monsterwelt']);
+        template_manager::move($monster, -1);
+        $default = template::get_record(['idnumber' => 'default']);
+        $monster = template::get_record(['idnumber' => 'monsterwelt']);
+        $this->assertLessThan((int) $default->get('sortorder'), (int) $monster->get('sortorder'));
+    }
 }

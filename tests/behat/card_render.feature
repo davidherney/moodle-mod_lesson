@@ -34,6 +34,24 @@ Feature: Card design renders lesson question pages
     And I should see "Right"
     And I should see "Wrong"
 
+  Scenario: Progress bar shows on the card when enabled
+    Given the following "activity" exists:
+      | activity    | lesson      |
+      | course      | C1          |
+      | idnumber    | 0006        |
+      | name        | Prog lesson |
+      | design      | monsterwelt |
+      | progressbar | 1           |
+    And the following "mod_lesson > pages" exist:
+      | lesson      | qtype       | title | content        |
+      | Prog lesson | multichoice | PQ    | Pick the right |
+    And the following "mod_lesson > answers" exist:
+      | page | answer | response | jumpto    | score |
+      | PQ   | Right  | Yes      | Next page | 1     |
+      | PQ   | Wrong  | No       | This page | 0     |
+    When I am on the "Prog lesson" "lesson activity" page logged in as student1
+    Then ".lesson-design-card__progress" "css_element" should exist
+
   Scenario: Default design keeps the standard look
     Given the following "activity" exists:
       | activity | lesson         |

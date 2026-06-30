@@ -62,4 +62,63 @@ final class template_manager {
         $decoded = json_decode((string) $tpl->get('config'), true) ?: [];
         return array_replace_recursive(config_schema::defaults($tpl->get('baseskin')), $decoded);
     }
+
+    /**
+     * Duplicate a template, generating a unique idnumber.
+     *
+     * @param template $tpl The template to duplicate.
+     * @return template The newly created copy.
+     */
+    public static function duplicate(template $tpl): template {
+        $base = $tpl->get('idnumber');
+        $i = 1;
+        do {
+            $newidnumber = $base . '_copy' . ($i > 1 ? $i : '');
+            $i++;
+        } while (template::record_exists_select('idnumber = ?', [$newidnumber]));
+
+        $copy = new template(0, (object) [
+            'name' => $tpl->get('name') . ' (copy)',
+            'idnumber' => $newidnumber,
+            'baseskin' => $tpl->get('baseskin'),
+            'config' => $tpl->get('config'),
+            'enabled' => $tpl->get('enabled'),
+            'sortorder' => $tpl->get('sortorder'),
+        ]);
+        $copy->create();
+        return $copy;
+    }
+
+    /**
+     * Move a template up or down in the sort order.
+     *
+     * @param template $tpl The template to move.
+     * @param int $direction -1 to move up, +1 to move down.
+     * @return void
+     */
+    public static function move(template $tpl, int $direction): void {
+        $all = array_values(template::get_records([], 'sortorder, name'));
+        $idx = null;
+        foreach ($all as $i => $row) {
+            if ((int) $row->get('id') === (int) $tpl->get('id')) {
+                $idx = $i;
+            }
+        }
+        if ($idx === null) {
+            return;
+        }
+        $swap = $idx + $direction;
+        if ($swap < 0 || $swap >= count($all)) {
+            return;
+        }
+        $tmp = $all[$idx];
+        $all[$idx] = $all[$swap];
+        $all[$swap] = $tmp;
+        foreach ($all as $pos => $row) {
+            if ((int) $row->get('sortorder') !== $pos) {
+                $row->set('sortorder', $pos);
+                $row->update();
+            }
+        }
+    }
 }

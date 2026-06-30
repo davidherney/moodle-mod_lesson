@@ -18,3 +18,10 @@ Feature: Manage lesson design templates
     And I press "Save changes"
     Then I should see "My Card"
     And I should see "mycard"
+
+  Scenario: Duplicate a template
+    Given I log in as "admin"
+    And I visit "/mod/lesson/templates.php"
+    When I click on "Duplicate" "link" in the "Monsterwelt" "table_row"
+    Then I should see "Monsterwelt (copy)"
+    And I should see "monsterwelt_copy"

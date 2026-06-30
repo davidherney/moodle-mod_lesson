@@ -49,13 +49,45 @@ $table->head = [
     get_string('actions'),
 ];
 $table->data = [];
+$lastindex = count($templates) - 1;
+$index = 0;
+$actionbase = '/mod/lesson/templateaction.php';
 foreach ($templates as $tpl) {
-    $editurl = new moodle_url('/mod/lesson/templateedit.php', ['id' => $tpl->get('id')]);
+    $id = $tpl->get('id');
+    $editurl = new moodle_url('/mod/lesson/templateedit.php', ['id' => $id]);
     $actions = html_writer::link($editurl, $OUTPUT->pix_icon('t/edit', get_string('edit')));
+
+    // Enable / disable toggle (default template stays enabled).
     if ($tpl->get('idnumber') !== 'default') {
-        $delurl = new moodle_url('/mod/lesson/templatedelete.php', ['id' => $tpl->get('id'), 'sesskey' => sesskey()]);
+        if ($tpl->get('enabled')) {
+            $disableurl = new moodle_url($actionbase, ['id' => $id, 'action' => 'disable', 'sesskey' => sesskey()]);
+            $actions .= ' ' . html_writer::link($disableurl, $OUTPUT->pix_icon('t/hide', get_string('disable')));
+        } else {
+            $enableurl = new moodle_url($actionbase, ['id' => $id, 'action' => 'enable', 'sesskey' => sesskey()]);
+            $actions .= ' ' . html_writer::link($enableurl, $OUTPUT->pix_icon('t/show', get_string('enable')));
+        }
+    }
+
+    // Duplicate.
+    $dupurl = new moodle_url($actionbase, ['id' => $id, 'action' => 'duplicate', 'sesskey' => sesskey()]);
+    $actions .= ' ' . html_writer::link($dupurl, $OUTPUT->pix_icon('t/copy', get_string('design_duplicate', 'lesson')));
+
+    // Move up / down.
+    if ($index > 0) {
+        $upurl = new moodle_url($actionbase, ['id' => $id, 'action' => 'moveup', 'sesskey' => sesskey()]);
+        $actions .= ' ' . html_writer::link($upurl, $OUTPUT->pix_icon('t/up', get_string('moveup')));
+    }
+    if ($index < $lastindex) {
+        $downurl = new moodle_url($actionbase, ['id' => $id, 'action' => 'movedown', 'sesskey' => sesskey()]);
+        $actions .= ' ' . html_writer::link($downurl, $OUTPUT->pix_icon('t/down', get_string('movedown')));
+    }
+
+    // Delete (not the built-in default).
+    if ($tpl->get('idnumber') !== 'default') {
+        $delurl = new moodle_url('/mod/lesson/templatedelete.php', ['id' => $id, 'sesskey' => sesskey()]);
         $actions .= ' ' . html_writer::link($delurl, $OUTPUT->pix_icon('t/delete', get_string('delete')));
     }
+
     $table->data[] = [
         format_string($tpl->get('name')),
         s($tpl->get('idnumber')),
@@ -63,6 +95,7 @@ foreach ($templates as $tpl) {
         $tpl->get('enabled') ? get_string('yes') : get_string('no'),
         $actions,
     ];
+    $index++;
 }
 echo html_writer::table($table);
 echo $OUTPUT->footer();

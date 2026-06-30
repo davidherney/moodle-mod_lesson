@@ -20,6 +20,26 @@
 .lesson-design-card__answers {
     display: grid;
     gap: 1rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.lesson-design-card__progress {
+    margin-bottom: 1.5rem;
+}
+
+.lesson-design-card .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .lesson-design-card__answers--cols2 {
@@ -49,7 +69,12 @@
 .lesson-design-card__nav {
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
     margin-top: 1.5rem;
+}
+
+.lesson-design-card__back {
+    margin-right: auto;
 }
 
 .lesson-design-card__next {

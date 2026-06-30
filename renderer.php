@@ -209,8 +209,13 @@ class mod_lesson_renderer extends plugin_renderer_base {
                 'other' => ['pagetype' => $page->get_typestring()],
             ]);
             $event->trigger();
+            $templatedata = $renderable->export_for_template($this);
+            // Inject the progress bar HTML (the renderer owns progress_bar()).
+            if (!empty($templatedata['showprogress'])) {
+                $templatedata['progresshtml'] = $this->progress_bar($lesson);
+            }
             return $this->render_from_template('mod_lesson/pages/' . $tpl->get('baseskin') . '/question',
-                $renderable->export_for_template($this));
+                $templatedata);
         }
         // --- MBS-HACK
         // We need to buffer here as there is an mforms display call
