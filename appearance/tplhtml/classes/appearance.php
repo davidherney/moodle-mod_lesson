@@ -30,6 +30,7 @@ class appearance extends \lessonappearance_base\appearance {
     private const CONFIG_KEYS = [
         'templatehtml',
         'continuehtml',
+        'eolhtml',
         'customcss',
     ];
 
@@ -176,6 +177,86 @@ class appearance extends \lessonappearance_base\appearance {
         ]);
     }
 
+    public function render_eol(
+        \lesson $lesson,
+        \stdClass $data
+    ): string {
+        global $PAGE;
+
+        $configdata = $this->get_design_config($lesson);
+
+        $eolhtml = $configdata['eolhtml'] ?? '';
+        if (empty($eolhtml)) {
+            return '';
+        }
+
+        $course = $lesson->courserecord;
+        $lessonoutput = $PAGE->get_renderer('mod_lesson');
+
+        // Build EOL messages.
+        $messages = '';
+        $messagekeys = [
+            'notenoughtimespent', 'numberofpagesviewed', 'youshouldview',
+            'numberofcorrectanswers', 'displayscorewithessays', 'displayscorewithoutessays',
+            'yourcurrentgradeisoutof', 'yourcurrentgradeis', 'eolstudentoutoftimenoanswers',
+            'welldone', 'displayofgrade',
+        ];
+        foreach ($messagekeys as $key) {
+            if ($data->$key !== false) {
+                $stringparams = in_array($key, ['eolstudentoutoftimenoanswers', 'welldone', 'displayofgrade']) ? null : $data->$key;
+                $messages .= \html_writer::tag('p', get_string($key, 'lesson', $stringparams), ['class' => 'text-center']);
+            }
+        }
+
+        // Congratulations.
+        $congratulations = $data->gradelesson ? get_string('congratulations', 'lesson') : '';
+
+        // Progress bar.
+        $progressbar = '';
+        if ($data->progresscompleted !== false) {
+            $progressbar = $lessonoutput->progress_bar($lesson, $data->progresscompleted);
+        }
+
+        // Build navigation buttons.
+        $buttons = '';
+        if ($data->reviewlesson !== false) {
+            $buttons .= \html_writer::link($data->reviewlesson, get_string('reviewlesson', 'lesson'),
+                ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+        }
+        if ($data->modattemptsnoteacher !== false) {
+            $buttons .= \html_writer::tag('p', get_string('modattemptsnoteacher', 'lesson'), ['class' => 'centerpadded']);
+        }
+        if ($data->activitylink !== false) {
+            $buttons .= $data->activitylink;
+        }
+        $url = new \moodle_url('/course/view.php', ['id' => $course->id]);
+        $buttons .= \html_writer::link($url, get_string('returnto', 'lesson', format_string($course->fullname, true)),
+            ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+        if (has_capability('gradereport/user:view', \context_course::instance($course->id))
+                && $course->showgrades && $lesson->grade != 0 && !$lesson->practice) {
+            $url = new \moodle_url('/grade/index.php', ['id' => $course->id]);
+            $buttons .= \html_writer::link($url, get_string('viewgrades', 'lesson'),
+                ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+        }
+
+        $replacements = [
+            'lesson_congratulations' => $congratulations,
+            'lesson_messages' => $messages,
+            'progress_bar' => $progressbar,
+            'navigation_buttons' => $buttons,
+        ];
+
+        $processedhtml = $this->process_template($eolhtml, $replacements);
+        $customcss = $configdata['customcss'] ?? '';
+
+        $output = $PAGE->get_renderer('mod_lesson');
+        return $output->render_from_template('lessonappearance_tplhtml/eol', [
+            'processedhtml' => $processedhtml,
+            'customcss' => $customcss,
+            'hascss' => !empty($customcss),
+        ]);
+    }
+
     public function get_config_form_elements(\MoodleQuickForm $mform, int $designid = 0): void {
         $component = 'lessonappearance_tplhtml';
 
@@ -215,6 +296,20 @@ class appearance extends \lessonappearance_base\appearance {
         $mform->addHelpButton('continuehtml', 'continuehtml', $component);
         if (isset($configdata['continuehtml'])) {
             $mform->setDefault('continuehtml', $configdata['continuehtml']);
+        }
+
+        // EOL (end of lesson) template.
+        $mform->addElement('header', 'tplhtml_eol', get_string('eolhtml', $component));
+
+        $mform->addElement('static', 'placeholders_eol', get_string('availableplaceholders', $component),
+            '<code>' . get_string('placeholders_eol', $component) . '</code>');
+
+        $mform->addElement('textarea', 'eolhtml', get_string('eolhtml', $component),
+            ['rows' => 15, 'cols' => 80]);
+        $mform->setType('eolhtml', PARAM_RAW);
+        $mform->addHelpButton('eolhtml', 'eolhtml', $component);
+        if (isset($configdata['eolhtml'])) {
+            $mform->setDefault('eolhtml', $configdata['eolhtml']);
         }
 
         // Custom CSS.

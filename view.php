@@ -267,7 +267,16 @@ if ($pageid != LESSON_EOL) {
     $outoftime = optional_param('outoftime', '', PARAM_ALPHA);
 
     $data = $lesson->process_eol_page($outoftime);
-    $lessoncontent = $lessonoutput->display_eol_page($lesson, $data);
+
+    // Use the appearance subplugin renderer if a design is selected.
+    $appearanceinstance = \mod_lesson\local\controller::get_appearance_instance($lesson);
+    $appearancecontent = $appearanceinstance ? $appearanceinstance->render_eol($lesson, $data) : '';
+
+    if (!empty($appearancecontent)) {
+        $lessoncontent = $appearancecontent;
+    } else {
+        $lessoncontent = $lessonoutput->display_eol_page($lesson, $data);
+    }
 
     lesson_add_fake_blocks($PAGE, $cm, $lesson, $timer);
     echo $lessonoutput->header($lesson, $cm, $currenttab, $extraeditbuttons, $lessonpageid, get_string("congratulations", "lesson"));

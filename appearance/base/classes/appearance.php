@@ -110,6 +110,20 @@ class appearance {
     }
 
     /**
+     * Render the end-of-lesson (EOL) results page using this appearance's template.
+     *
+     * @param \lesson $lesson The lesson instance.
+     * @param \stdClass $data The data from process_eol_page.
+     * @return string The rendered HTML output, or empty string for default rendering.
+     */
+    public function render_eol(
+        \lesson $lesson,
+        \stdClass $data
+    ): string {
+        return '';
+    }
+
+    /**
      * Returns the mustache template name for this appearance.
      *
      * @return string Template name in frankenstyle (e.g., lessonappearance_base/main).

@@ -3370,11 +3370,14 @@ class lesson extends lesson_base {
             // and then display it below in answer processing.
             if (isset($USER->modattempts[$this->properties->id])) {
                 $retries = $this->count_user_retries($USER->id);
-                if (!$attempts = $this->get_attempts($retries - 1, false, $page->id)) {
-                    throw new moodle_exception('cannotfindpreattempt', 'lesson');
+                $attempts = $this->get_attempts($retries - 1, false, $page->id);
+                if (!$attempts) {
+                    $attempt = false;
+                    unset($USER->modattempts[$this->properties->id]);
+                } else {
+                    $attempt = end($attempts);
+                    $USER->modattempts[$this->properties->id] = $attempt;
                 }
-                $attempt = end($attempts);
-                $USER->modattempts[$this->properties->id] = $attempt;
             } else {
                 $attempt = false;
             }

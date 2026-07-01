@@ -227,6 +227,127 @@ class appearance extends \lessonappearance_base\appearance {
     }
 
     /**
+     * Render the end-of-lesson (EOL) results page using the scene appearance template.
+     *
+     * @param \lesson $lesson The lesson instance.
+     * @param \stdClass $data The data from process_eol_page.
+     * @return string The rendered HTML output.
+     */
+    public function render_eol(
+        \lesson $lesson,
+        \stdClass $data
+    ): string {
+        global $PAGE, $DB;
+
+        $course = $lesson->courserecord;
+
+        // Build the EOL content messages.
+        $messages = [];
+
+        if ($data->notenoughtimespent !== false) {
+            $messages[] = get_string('notenoughtimespent', 'lesson', $data->notenoughtimespent);
+        }
+        if ($data->numberofpagesviewed !== false) {
+            $messages[] = get_string('numberofpagesviewed', 'lesson', $data->numberofpagesviewed);
+        }
+        if ($data->youshouldview !== false) {
+            $messages[] = get_string('youshouldview', 'lesson', $data->youshouldview);
+        }
+        if ($data->numberofcorrectanswers !== false) {
+            $messages[] = get_string('numberofcorrectanswers', 'lesson', $data->numberofcorrectanswers);
+        }
+        if ($data->displayscorewithessays !== false) {
+            $messages[] = get_string('displayscorewithessays', 'lesson', $data->displayscorewithessays);
+        } else if ($data->displayscorewithoutessays !== false) {
+            $messages[] = get_string('displayscorewithoutessays', 'lesson', $data->displayscorewithoutessays);
+        }
+        if ($data->yourcurrentgradeisoutof !== false) {
+            $messages[] = get_string('yourcurrentgradeisoutof', 'lesson', $data->yourcurrentgradeisoutof);
+        }
+        if ($data->yourcurrentgradeis !== false) {
+            $messages[] = get_string('yourcurrentgradeis', 'lesson', $data->yourcurrentgradeis);
+        }
+        if ($data->eolstudentoutoftimenoanswers !== false) {
+            $messages[] = get_string('eolstudentoutoftimenoanswers', 'lesson');
+        }
+        if ($data->welldone !== false) {
+            $messages[] = get_string('welldone', 'lesson');
+        }
+        if ($data->displayofgrade !== false) {
+            $messages[] = get_string('displayofgrade', 'lesson');
+        }
+
+        // Build navigation buttons.
+        $lessonoutput = $PAGE->get_renderer('mod_lesson');
+        $buttons = '';
+
+        if ($data->reviewlesson !== false) {
+            $buttons .= \html_writer::link($data->reviewlesson, get_string('reviewlesson', 'lesson'),
+                ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+        }
+        if ($data->modattemptsnoteacher !== false) {
+            $buttons .= \html_writer::tag('p', get_string('modattemptsnoteacher', 'lesson'),
+                ['class' => 'centerpadded']);
+        }
+        if ($data->activitylink !== false) {
+            $buttons .= $data->activitylink;
+        }
+
+        $url = new \moodle_url('/course/view.php', ['id' => $course->id]);
+        $buttons .= \html_writer::link($url, get_string('returnto', 'lesson', format_string($course->fullname, true)),
+            ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+
+        if (has_capability('gradereport/user:view', \context_course::instance($course->id))
+                && $course->showgrades && $lesson->grade != 0 && !$lesson->practice) {
+            $url = new \moodle_url('/grade/index.php', ['id' => $course->id]);
+            $buttons .= \html_writer::link($url, get_string('viewgrades', 'lesson'),
+                ['class' => 'centerpadded lessonbutton standardbutton pe-3']);
+        }
+
+        // Progress bar.
+        $progressbar = '';
+        if ($data->progresscompleted !== false) {
+            $progressbar = $lessonoutput->progress_bar($lesson, $data->progresscompleted);
+        }
+
+        $templatedata = [
+            'congratulations' => $data->gradelesson ? get_string('congratulations', 'lesson') : '',
+            'hascongratulations' => !empty($data->gradelesson),
+            'messages' => array_map(fn($m) => ['text' => $m], $messages),
+            'hasmessages' => !empty($messages),
+            'navigation_buttons' => $buttons,
+            'progress_bar' => $progressbar,
+        ];
+
+        // Load design record for images and colors.
+        $design = $DB->get_record('lesson_appearance_designs', ['uniqueid' => $lesson->appearance]);
+        if ($design) {
+            $syscontext = \context_system::instance();
+            $configdata = !empty($design->configdata) ? (json_decode($design->configdata, true) ?: []) : [];
+
+            $fileareas = [
+                'appearance_background' => 'background',
+                'appearance_character'  => 'character',
+                'appearance_flag'       => 'flag',
+                'appearance_good'       => 'good',
+            ];
+
+            foreach ($fileareas as $filearea => $key) {
+                $url = $this->get_file_url($syscontext, $filearea, $design->id);
+                $templatedata[$key . '_url'] = $url;
+                $templatedata['has' . $key] = !empty($url);
+            }
+
+            foreach (self::COLOR_KEYS as $colorkey) {
+                $templatedata[$colorkey] = $configdata[$colorkey] ?? '';
+            }
+        }
+
+        $output = $PAGE->get_renderer('mod_lesson');
+        return $output->render_from_template('lessonappearance_scene/eol', $templatedata);
+    }
+
+    /**
      * Get the URL for a stored file in a given file area.
      *
      * @param \context $context The context where files are stored.
