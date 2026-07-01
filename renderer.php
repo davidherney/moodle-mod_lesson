@@ -505,14 +505,18 @@ class mod_lesson_renderer extends plugin_renderer_base {
             $progress = $lesson->calculate_progress();
         }
 
-        $content = html_writer::start_tag('div');
+        $content = html_writer::tag(
+            'div',
+            get_string('progresscompleted', 'lesson', $progress),
+            ['class' => 'progress-label']
+        );
         $content .= html_writer::start_tag('div', array('class' => 'progress'));
         $content .= html_writer::start_tag('div', array('class' => 'progress-bar bar', 'role' => 'progressbar',
             'style' => 'width: ' . $progress .'%', 'aria-valuenow' => $progress, 'aria-valuemin' => 0, 'aria-valuemax' => 100));
         $content .= $progress . "%";
         $content .= html_writer::end_tag('div');
         $content .= html_writer::end_tag('div');
-        $printprogress = html_writer::tag('div', get_string('progresscompleted', 'lesson', $progress) . $content);
+        $printprogress = html_writer::tag('div', $content);
         return $this->output->box($printprogress, 'progress_bar');
     }
 

@@ -3382,8 +3382,18 @@ class lesson extends lesson_base {
             // Use the appearance subplugin renderer if a design is selected, otherwise use the classic view.
             $appearanceinstance = \mod_lesson\local\controller::get_appearance_instance($this);
             if ($appearanceinstance) {
+                $pagetype = $page->get_idstring();
+                $qtype = $page->get_typeid();
+
+                $cssclass = 'lesson-appearance-wrapper' . ($pagetype ? ' lesson-page-type-' . $pagetype : '');
+                if ($qtype) {
+                    $cssclass .= ' lesson-question-type lesson-question-type-' . $qtype;
+                }
                 $progressbar = $lessonoutput->progress_bar($this);
                 $lessoncontent = $appearanceinstance->render($this, $page, $lessonoutput, $attempt, $progressbar);
+                $lessoncontent = html_writer::tag('div', $lessoncontent, [
+                    'class' => $cssclass,
+                ]);
             } else {
                 $lessoncontent = $lessonoutput->display_page($this, $page, $attempt);
             }
