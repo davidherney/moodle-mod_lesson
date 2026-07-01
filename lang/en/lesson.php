@@ -36,6 +36,7 @@ $string['activitylink_help'] = 'To provide a link at the end of the lesson to an
 $string['activitylinkname'] = 'Go to {$a}';
 $string['activityoverview'] = 'You have lessons that are due';
 $string['appearancedesign'] = 'Appearance design';
+$string['appearancedesign_help'] = 'Select the appearance design used to present lesson pages. Designs with preview images are shown as selectable tiles.';
 $string['appearancedesigns'] = 'Appearance designs';
 $string['addabranchtable'] = 'Add a content page';
 $string['addanendofbranch'] = 'Add an end of branch';
@@ -428,6 +429,7 @@ $string['ongoing'] = 'Display ongoing score';
 $string['ongoing_help'] = 'If enabled, each page will display the student\'s current points earned out of the total possible thus far.';
 $string['ongoingcustom'] = 'You have earned {$a->score} point(s) out of {$a->currenthigh} point(s) thus far.';
 $string['ongoingnormal'] = 'You have answered {$a->correct} correctly out of {$a->viewed} attempts.';
+$string['nopreviewavailable'] = 'No preview';
 $string['onpostperpage'] = 'Only one posting per grade';
 $string['openafterclose'] = 'You have specified an open date after the close date';
 $string['options'] = 'Options';
@@ -638,5 +640,7 @@ $string['groupoverridesdeleted'] = 'Group overrides deleted';
 
 // Deprecated since Moodle 5.0.
 $string['preview'] = 'Preview';
+$string['previewimage'] = 'Preview image';
+$string['previewimage_help'] = 'Optional image shown for this design in the Lesson appearance selector. If no preview image is uploaded, Moodle generates a thumbnail from the design settings when possible.';
 $string['previewlesson'] = 'Preview {$a}';
 $string['viewreports2'] = 'View {$a} completed attempts';
