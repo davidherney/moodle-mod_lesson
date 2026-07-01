@@ -1,0 +1,176 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace mod_lesson\output;
+
+/**
+ * Tests for the question_page renderable.
+ *
+ * @package    mod_lesson
+ * @copyright  2026 mebis
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers     \mod_lesson\output\question_page
+ */
+final class question_page_test extends \advanced_testcase {
+    /**
+     * export_for_template exposes the answers and the form fields needed by continue.php.
+     */
+    public function test_export_for_template_lists_answers(): void {
+        global $CFG, $DB, $PAGE;
+        require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+
+        $this->resetAfterTest();
+        \lesson_install_builtin_templates();
+        $this->setAdminUser();
+
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $lessonrec = $gen->create_module('lesson', ['course' => $course->id, 'design' => 'monsterwelt']);
+        $cm = get_coursemodule_from_instance('lesson', $lessonrec->id);
+        $lessonrec = $DB->get_record('lesson', ['id' => $lessonrec->id], '*', MUST_EXIST);
+        $lessonrec->cmid = $cm->id;
+
+        /** @var \mod_lesson_generator $lgen */
+        $lgen = $gen->get_plugin_generator('mod_lesson');
+        $pagerec = $lgen->create_question_multichoice($lessonrec, []);
+
+        // The page rendering relies on $PAGE->cm being set.
+        $PAGE->set_cm($cm, $course);
+
+        $lesson = new \lesson($lessonrec, $cm, $course);
+        $page = $lesson->load_page($pagerec->id);
+
+        $renderable = new question_page($lesson, $page, null, $cm->id);
+        $renderer = $PAGE->get_renderer('mod_lesson');
+        $data = $renderable->export_for_template($renderer);
+
+        $this->assertCount(2, $data['answers']);
+        $this->assertSame(sesskey(), $data['sesskey']);
+        $this->assertStringContainsString('continue.php', $data['formaction']);
+        $this->assertSame((int) $cm->id, (int) $data['cmid']);
+        $this->assertSame((int) $pagerec->id, (int) $data['pageid']);
+        $this->assertStringStartsWith('_qf__', $data['qfmarkername']);
+        $this->assertFalse($data['multiple']);
+        $this->assertSame('answerid', $data['answers'][0]['name']);
+        $this->assertSame('radio', $data['answers'][0]['type']);
+    }
+
+    /**
+     * Build the export data for a question of the given type under the card design.
+     *
+     * @param string $generatormethod The mod_lesson generator method (e.g. create_question_truefalse).
+     * @param array $record Optional page record passed to the generator.
+     * @return array The exported template data.
+     */
+    protected function export_for_type(string $generatormethod, array $record = []): array {
+        global $CFG, $DB, $PAGE;
+        require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+
+        \lesson_install_builtin_templates();
+        $this->setAdminUser();
+
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $lessonrec = $gen->create_module('lesson', ['course' => $course->id, 'design' => 'monsterwelt']);
+        $cm = get_coursemodule_from_instance('lesson', $lessonrec->id);
+        $lessonrec = $DB->get_record('lesson', ['id' => $lessonrec->id], '*', MUST_EXIST);
+        $lessonrec->cmid = $cm->id;
+
+        /** @var \mod_lesson_generator $lgen */
+        $lgen = $gen->get_plugin_generator('mod_lesson');
+        $pagerec = $lgen->$generatormethod($lessonrec, $record);
+
+        $PAGE->set_cm($cm, $course);
+        $lesson = new \lesson($lessonrec, $cm, $course);
+        $page = $lesson->load_page($pagerec->id);
+
+        $renderable = new question_page($lesson, $page, null, $cm->id);
+        return $renderable->export_for_template($PAGE->get_renderer('mod_lesson'));
+    }
+
+    /**
+     * True/false questions render as radio choices.
+     */
+    public function test_truefalse_renders_as_choices(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_truefalse');
+        $this->assertTrue($data['ischoice']);
+        $this->assertFalse($data['istext']);
+        $this->assertSame('_qf__lesson_display_answer_form_truefalse', $data['qfmarkername']);
+        $this->assertSame('answerid', $data['answers'][0]['name']);
+        $this->assertSame('radio', $data['answers'][0]['type']);
+    }
+
+    /**
+     * Short answer questions render as a single text input.
+     */
+    public function test_shortanswer_renders_as_textinput(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_shortanswer');
+        $this->assertTrue($data['istext']);
+        $this->assertFalse($data['ischoice']);
+        $this->assertSame('answer', $data['inputname']);
+        $this->assertSame('text', $data['inputtype']);
+        $this->assertSame('_qf__lesson_display_answer_form_shortanswer', $data['qfmarkername']);
+    }
+
+    /**
+     * Numerical questions render as a single number input.
+     */
+    public function test_numerical_renders_as_textinput(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_numeric');
+        $this->assertTrue($data['istext']);
+        $this->assertSame('answer', $data['inputname']);
+        $this->assertSame('number', $data['inputtype']);
+        $this->assertSame('_qf__lesson_display_answer_form_numerical', $data['qfmarkername']);
+    }
+
+    /**
+     * Matching questions render as paired selects.
+     */
+    public function test_matching_renders_as_selects(): void {
+        $this->resetAfterTest();
+        $data = $this->export_for_type('create_question_matching');
+        $this->assertTrue($data['ismatching']);
+        $this->assertSame('_qf__lesson_display_answer_form_matching', $data['qfmarkername']);
+        $this->assertNotEmpty($data['matchrows']);
+        $this->assertStringStartsWith('response[', $data['matchrows'][0]['selectname']);
+        $this->assertNotEmpty($data['matchrows'][0]['options']);
+    }
+
+    /**
+     * Content (branch table) pages render as navigation buttons.
+     */
+    public function test_content_renders_as_buttons(): void {
+        global $CFG;
+        require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+        $this->resetAfterTest();
+        $record = [
+            'answer_editor' => [
+                0 => ['text' => 'Go next', 'format' => FORMAT_MOODLE],
+                1 => ['text' => 'Go back', 'format' => FORMAT_MOODLE],
+            ],
+            'jumpto' => [0 => LESSON_NEXTPAGE, 1 => LESSON_PREVIOUSPAGE],
+        ];
+        $data = $this->export_for_type('create_content', $record);
+        $this->assertTrue($data['iscontent']);
+        $this->assertFalse($data['ischoice']);
+        $this->assertCount(2, $data['buttons']);
+        $this->assertArrayHasKey('jumpto', $data['buttons'][0]);
+        $this->assertArrayHasKey('label', $data['buttons'][0]);
+    }
+}

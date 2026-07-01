@@ -30,6 +30,13 @@ $ADMIN->add('modsettings', new admin_category('modlessonfolder', new lang_string
 $settings = new admin_settingpage($section, get_string('settings'),
     'moodle/site:config', $module->is_enabled() === false);
 
+// +++ MBS-HACK(mebis): design templates feature.
+$ADMIN->add('modlessonfolder', new admin_externalpage('lessontemplates',
+    get_string('design_managetemplates', 'lesson'),
+    new moodle_url('/mod/lesson/templates.php'),
+    'mod/lesson:managetemplates'));
+// --- MBS-HACK
+
 if ($ADMIN->fulltree) {
     require_once($CFG->dirroot.'/mod/lesson/locallib.php');
     $yesno = array(0 => get_string('no'), 1 => get_string('yes'));
@@ -75,6 +82,16 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configselect_with_advanced('mod_lesson/displayleftif',
         get_string('displayleftif', 'lesson'), get_string('displayleftif_help', 'lesson'),
         array('value' => 0, 'adv' => true), $percentage));
+
+    // +++ MBS-HACK(mebis): design templates feature.
+    $designoptions = \mod_lesson\local\template_manager::menu_options();
+    if (empty($designoptions)) {
+        $designoptions = ['default' => get_string('design_default', 'lesson')];
+    }
+    $settings->add(new admin_setting_configselect_with_advanced('mod_lesson/design',
+        get_string('design', 'lesson'), get_string('design_help', 'lesson'),
+        array('value' => 'default', 'adv' => false), $designoptions));
+    // --- MBS-HACK
 
     // Slideshow settings.
     $settings->add(new admin_setting_configselect_with_advanced('mod_lesson/slideshow',

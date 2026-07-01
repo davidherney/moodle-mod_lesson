@@ -1,0 +1,63 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_lesson/pages/card/content
+
+    Card design for a lesson content (branch table) page.
+
+    Context variables required for this template:
+    * formaction - URL the navigation buttons post to (continue.php).
+    * sesskey - Session key.
+    * cmid - Course module id.
+    * pageid - Lesson page id.
+    * title - Page title.
+    * contents - Formatted HTML page content.
+    * palette - { primary, surface, text, accent }.
+    * buttons - Array of { jumpto, label }.
+
+    Example context (json):
+    {
+        "formaction": "https://example.com/mod/lesson/continue.php",
+        "sesskey": "abc123",
+        "cmid": 7,
+        "pageid": 3,
+        "title": "Welcome",
+        "contents": "<p>Choose a path</p>",
+        "showprogress": false,
+        "progresshtml": "",
+        "palette": {"primary": "#6c5ce7", "surface": "#ffffff", "text": "#2d2d44", "accent": "#00b894"},
+        "buttons": [{"jumpto": "1", "label": "Continue"}]
+    }
+}}
+<div class="lesson-design-card" style="--ld-primary: {{palette.primary}}; --ld-surface: {{palette.surface}}; --ld-text: {{palette.text}}; --ld-accent: {{palette.accent}};">
+    {{#showprogress}}
+    <div class="lesson-design-card__progress">{{{progresshtml}}}</div>
+    {{/showprogress}}
+    <h3 class="lesson-design-card__title">{{title}}</h3>
+    <div class="lesson-design-card__prompt">{{{contents}}}</div>
+    <div class="lesson-design-card__buttons">
+        {{#buttons}}
+        <form method="post" action="{{formaction}}" class="lesson-design-card__buttonform">
+            <input type="hidden" name="sesskey" value="{{sesskey}}">
+            <input type="hidden" name="id" value="{{cmid}}">
+            <input type="hidden" name="pageid" value="{{pageid}}">
+            <input type="hidden" name="jumpto" value="{{jumpto}}">
+            <button type="submit" class="btn btn-primary lesson-design-card__next">{{label}}</button>
+        </form>
+        {{/buttons}}
+    </div>
+</div>

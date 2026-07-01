@@ -539,9 +539,26 @@ function lesson_menu_block_contents($cmid, $lesson) {
         return null;
     }
 
+    // +++ MBS-HACK(mebis): design templates feature - render menu entries as cards.
+    $menuclass = 'menuwrapper';
+    $menustyle = '';
+    $tpl = \mod_lesson\local\template_manager::get_for_lesson($lesson->properties());
+    if ($tpl->get('baseskin') !== 'default') {
+        $menuclass .= ' lesson-design-menu';
+        $palette = \mod_lesson\local\template_manager::resolved_config($tpl)['palette'] ?? [];
+        $menustyle = ' style="' . s(sprintf(
+            '--ld-primary: %s; --ld-surface: %s; --ld-text: %s; --ld-accent: %s;',
+            $palette['primary'] ?? '#6c5ce7',
+            $palette['surface'] ?? '#ffffff',
+            $palette['text'] ?? '#2d2d44',
+            $palette['accent'] ?? '#00b894'
+        )) . '"';
+    }
+    // --- MBS-HACK
+
     $content = '<a href="#maincontent" class="accesshide">' .
         get_string('skip', 'lesson') .
-        "</a>\n<div class=\"menuwrapper\">\n<ul>\n";
+        "</a>\n<div class=\"$menuclass\"$menustyle>\n<ul>\n";
 
     while ($pageid != 0) {
         $page = $pages[$pageid];
@@ -667,7 +684,7 @@ function lesson_process_group_deleted_in_course($courseid, $groupid = null) {
  */
 function lesson_get_overview_report_table_and_data(lesson $lesson, $currentgroup) {
     global $DB, $CFG, $OUTPUT;
-    require_once($CFG->dirroot . '/mod/lesson/pagetypes/branchtable.php');
+    require_once($CFG->dirroot . '/mod/lesson/pagetype/branchtable/pagetype.php');
 
     $context = $lesson->context;
     $cm = $lesson->cm;

@@ -194,6 +194,41 @@ class mod_lesson_renderer extends plugin_renderer_base {
      * @return string
      */
     public function display_page(lesson $lesson, lesson_page $page, $attempt) {
+        // +++ MBS-HACK(mebis): design templates feature.
+        $tpl = \mod_lesson\local\template_manager::get_for_lesson($lesson->properties());
+        $idstring = ($page instanceof \lesson_page) ? $page->get_idstring() : '';
+        // Question types that use the card answer form.
+        $cardquestiontypes = ['multichoice', 'truefalse', 'shortanswer', 'numerical', 'matching'];
+        if ($tpl->get('baseskin') !== 'default' && $idstring !== '') {
+            $skin = $tpl->get('baseskin');
+            $cmid = $this->page->cm->id;
+            $context = \context_module::instance($cmid);
+            $renderable = new \mod_lesson\output\question_page($lesson, $page, $attempt, $cmid);
+
+            if (in_array($idstring, $cardquestiontypes, true)) {
+                \mod_lesson\event\question_viewed::create([
+                    'context' => $context,
+                    'objectid' => $page->properties()->id,
+                    'other' => ['pagetype' => $page->get_typestring()],
+                ])->trigger();
+                $templatedata = $renderable->export_for_template($this);
+                if (!empty($templatedata['showprogress'])) {
+                    $templatedata['progresshtml'] = $this->progress_bar($lesson);
+                }
+                return $this->render_from_template('mod_lesson/pages/' . $skin . '/question', $templatedata);
+            } else if ($idstring === 'branchtable') {
+                \mod_lesson\event\content_page_viewed::create([
+                    'context' => $context,
+                    'objectid' => $page->properties()->id,
+                ])->trigger();
+                $templatedata = $renderable->export_for_template($this);
+                if (!empty($templatedata['showprogress'])) {
+                    $templatedata['progresshtml'] = $this->progress_bar($lesson);
+                }
+                return $this->render_from_template('mod_lesson/pages/' . $skin . '/content', $templatedata);
+            }
+        }
+        // --- MBS-HACK
         // We need to buffer here as there is an mforms display call
         ob_start();
         echo $page->display($this, $attempt);
