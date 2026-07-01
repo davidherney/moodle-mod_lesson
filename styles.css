@@ -112,3 +112,41 @@
     background: var(--ld-primary, #6c5ce7);
     border-color: var(--ld-primary, #6c5ce7);
 }
+
+/* Navigation block (Inhaltsverzeichnis) rendered as cards when a design template is active. */
+.lesson-design-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.lesson-design-menu li {
+    background: var(--ld-surface, #fff);
+    border: 2px solid #eee;
+    border-radius: 0.75rem;
+    padding: 0;
+    color: var(--ld-text, #2d2d44);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lesson-design-menu li:hover {
+    border-color: var(--ld-accent, #00b894);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.lesson-design-menu li a {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.lesson-design-menu li.selected {
+    border-color: var(--ld-primary, #6c5ce7);
+    background: var(--ld-primary, #6c5ce7);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+}
